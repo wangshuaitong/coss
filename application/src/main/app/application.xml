@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:apikit="http://www.mulesoft.org/schema/mule/apikit" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/apikit/current/mule-apikit.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <db:mysql-config name="MySQL_Configuration" host="localhost" port="3306" user="root" database="application" doc:name="MySQL Configuration"/>
+    <db:mysql-config name="MySQL_Configuration1" host="localhost" port="3306" user="root" database="application" doc:name="MySQL Configuration"/>
+    <db:mysql-config name="MySQL_Configuration2" host="localhost" port="3306" user="root" database="application" doc:name="MySQL Configuration"/>
+    <db:mysql-config name="MySQL_Configuration3" host="localhost" port="3306" user="root" database="application" doc:name="MySQL Configuration"/>
+    <db:mysql-config name="MySQL_Configuration4" host="localhost" port="3306" user="root" database="application" doc:name="MySQL Configuration"/>
+    <db:mysql-config name="MySQL_Configuration5" host="localhost" port="3306" user="root" database="application" doc:name="MySQL Configuration"/>
+    <db:template-query name="SelectExist" doc:name="Template Query">
+        <db:parameterized-query><![CDATA[select application from baseinfo where application=:application]]></db:parameterized-query>
+        <db:in-param name="application" defaultValue="#[flowVars.param.application]"/>
+    </db:template-query>
+    <db:template-query name="updateById" doc:name="Template Query">
+        <db:parameterized-query><![CDATA[update baseinfo set baseInfo =:baseInfo where application =:application]]></db:parameterized-query>
+        <db:in-param name="baseInfo" defaultValue="#[flowVars.param.baseInfo]"/>
+        <db:in-param name="application" defaultValue="#[flowVars.param.application]"/>
+    </db:template-query>
+    <db:template-query name="insertInfo" doc:name="Template Query">
+        <db:parameterized-query><![CDATA[insert into baseinfo(username,password,baseInfo,application,company,status,date) values(:username,:password,:baseInfo,:application,:company,:status,:date)]]></db:parameterized-query>
+        <db:in-param name="username" defaultValue="#[flowVars.param.username]"/>
+        <db:in-param name="password" defaultValue="#[flowVars.param.password]"/>
+        <db:in-param name="baseInfo" defaultValue="#[flowVars.param.baseInfo]"/>
+        <db:in-param name="application" defaultValue="#[flowVars.param.application]"/>
+        <db:in-param name="company" defaultValue="#[flowVars.param.company]"/>
+        <db:in-param name="status" defaultValue="#[flowVars.param.status]"/>
+        <db:in-param name="date" defaultValue="#[flowVars.param.date]"/>
+    </db:template-query>
+    <apikit:config name="Router" raml="saveapplicationApi.raml" consoleEnabled="true" consolePath="console" keepRamlBaseUri="false" doc:name="Router">
+        <apikit:flow-mapping resource="/saveapplication" action="post" content-type="application/json" flow-ref="save_flow"/>
+        <apikit:flow-mapping resource="/delinfo" action="post" content-type="application/json" flow-ref="delInfoFlow"/>
+    </apikit:config>
+    <flow name="APIKit_Router_flow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/api/*" doc:name="HTTP"/>
+        <apikit:router config-ref="Router" doc:name="APIkit Router"/>
+    </flow>
+    <flow name="login">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/api/login" doc:name="HTTP"/>
+        <dw:transform-message doc:name="Transform Message http parsm">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload]]></dw:set-payload>
+        </dw:transform-message>
+        <logger message="#[payload]" level="INFO" category="111111111111" doc:name="Logger"/>
+        <set-variable variableName="name" value="#[payload.username]" doc:name="name"/>
+        <set-variable variableName="password" value="#[payload.password]" doc:name="password"/>
+        <logger message="#[flowVars.name]" level="INFO" category="&quot;var_value&quot;" doc:name="logger_var_name"/>
+        <db:select config-ref="MySQL_Configuration" doc:name="login select ">
+            <db:dynamic-query><![CDATA[select username from baseinfo where username="#[flowVars.name]" and password = "#[flowVars.password]"]]></db:dynamic-query>
+        </db:select>
+        <choice doc:name="login select user ">
+            <when expression="#[payload.size()&gt;0]">
+                <dw:transform-message doc:name="Transform Message">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	users:payload.username
+}]]></dw:set-payload>
+                </dw:transform-message>
+                <set-payload value="#[payload]" doc:name="return username"/>
+            </when>
+            <otherwise>
+                <set-payload value="#[&quot;no&quot;]" doc:name="return not user message"/>
+            </otherwise>
+        </choice>
+
+    </flow>
+    <flow name="baseinfolist">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/api/baseinfo" doc:name="HTTP"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload]]></dw:set-payload>
+        </dw:transform-message>
+        <logger message="#[payload.username]" level="INFO" category="&quot;param_value&quot;" doc:name="Logger_Http_Param_Name"/>
+        <set-variable variableName="name" value="#[payload.username]" doc:name="Param_Name"/>
+        <logger message="#[flowVars.name]" level="INFO" category="3333333" doc:name="Logger_FlowVar_Name"/>
+        <db:select config-ref="MySQL_Configuration1" doc:name="Database">
+            <db:dynamic-query><![CDATA[select application,company,status,date from baseinfo where username="#[flowVars.name]"]]></db:dynamic-query>
+        </db:select>
+        <choice doc:name="Choice">
+            <when expression="#[payload.size()&gt;0]">
+                <logger message="#[payload]" level="INFO" category="222222" doc:name="Logger"/>
+                <dw:transform-message doc:name="Transform Message">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+user:payload map {
+	application:$.application,
+	company:$.company,
+	status:$.status,
+	date:$.date
+	
+}
+]]></dw:set-payload>
+                </dw:transform-message>
+                <set-payload value="#[payload]" doc:name="Set Payload"/>
+            </when>
+            <otherwise>
+                <set-payload value="#[&quot;not found data&quot;]" doc:name="Set Payload"/>
+            </otherwise>
+        </choice>
+
+    </flow>
+    <flow name="cosmuleFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/api/basicinfo" doc:name="HTTP"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload]]></dw:set-payload>
+        </dw:transform-message>
+        <set-variable doc:name="Variable" value="#[payload.application]" variableName="application"/>
+        <logger message="#[flowVars.application]" level="INFO" category="11111" doc:name="Logger"/>
+        <db:select config-ref="MySQL_Configuration2" doc:name="Database">
+            <db:dynamic-query><![CDATA[select * from baseinfo where application='#[flowVars.application]']]></db:dynamic-query>
+        </db:select>
+        <logger message="#[payload.size()]" level="INFO" category="2222222222222" doc:name="Logger"/>
+        <choice doc:name="Choice">
+            <when expression="#[payload.size()&gt;0]">
+                <dw:transform-message doc:name="Transform Message">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	infos:payload.baseInfo
+}]]></dw:set-payload>
+                </dw:transform-message>
+                <set-payload value="#[payload]" doc:name="Set Payload"/>
+            </when>
+            <otherwise>
+                <set-payload value="#[&quot;not find data&quot;]" doc:name="Set Payload"/>
+            </otherwise>
+        </choice>
+
+    </flow>
+    <flow name="delInfoFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/api/delinfo" doc:name="HTTP"/>
+        <logger message="----------------------delete start ------------------------" level="INFO" doc:name="Logger"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload]]></dw:set-payload>
+        </dw:transform-message>
+        <choice doc:name="Choice">
+            <when expression="#[payload.application!='']">
+                <set-variable variableName="data" value="#[payload.application]" doc:name="Variable"/>
+                <db:select config-ref="MySQL_Configuration3" doc:name="Database">
+                    <db:parameterized-query><![CDATA[select * from baseinfo where application = #[flowVars.data]]]></db:parameterized-query>
+                </db:select>
+                <choice doc:name="Choice">
+                    <when expression="payload.size()&gt;0">
+                        <logger message="#[payload[0].application]" level="INFO" doc:name="Logger"/>
+                        <db:insert config-ref="MySQL_Configuration3" doc:name="Database">
+                            <db:parameterized-query><![CDATA[insert into baseinfo_copy select * from baseinfo where application = #[flowVars.data.application]]]></db:parameterized-query>
+                        </db:insert>
+                        <logger message="&#8220;copy end&#65292;start delete.&#8221;" level="INFO" doc:name="Logger"/>
+                        <db:delete config-ref="MySQL_Configuration4" doc:name="Database">
+                            <db:parameterized-query><![CDATA[delete from baseinfo where application = #[flowVars.data.application]]]></db:parameterized-query>
+                        </db:delete>
+                        <dw:transform-message doc:name="Transform Message">
+                            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	result:"delete record success"
+}]]></dw:set-payload>
+                        </dw:transform-message>
+                    </when>
+                    <otherwise>
+                        <logger message="delete error" level="INFO" doc:name="Logger"/>
+                        <dw:transform-message doc:name="Transform Message">
+                            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	result:"delete record fail"
+}]]></dw:set-payload>
+                        </dw:transform-message>
+                    </otherwise>
+                </choice>
+            </when>
+            <otherwise>
+                <logger message="delete error" level="INFO" doc:name="Logger"/>
+                <dw:transform-message doc:name="Transform Message">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	result:"delete record fail"
+}]]></dw:set-payload>
+                </dw:transform-message>
+            </otherwise>
+        </choice>
+
+        <logger message="------------------------delete end--------------" level="INFO" doc:name="Logger"/>
+    </flow>
+    <flow name="save_flow">
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+{
+	username:payload.username,
+	password:payload.password,
+	baseInfo:payload.baseInfo,
+	application:payload.application,
+	company:payload.company,
+	status:payload.status,
+	date:payload.date
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <set-variable variableName="param" value="#[message.payload]" doc:name="Set Variable"/>
+        <logger message="#[flowVars.param]" level="INFO" doc:name="Logger"/>
+        <choice doc:name="Choice if Variable is empty">
+            <when expression="flowVars.param.size()&gt;0">
+                <db:select config-ref="MySQL_Configuration" doc:name="select id if exist">
+                    <db:template-query-ref name="SelectExist"/>
+                </db:select>
+                <logger message="#[flowVars.param.size()]" level="INFO" doc:name="Logger"/>
+                <choice doc:name="Choice">
+                    <when expression="payload.size()&gt;0">
+                        <db:update config-ref="MySQL_Configuration" doc:name="update">
+                            <db:template-query-ref name="updateById"/>
+                        </db:update>
+                        <set-payload value="success" doc:name="Set Payload"/>
+                    </when>
+                    <otherwise>
+                        <db:insert config-ref="MySQL_Configuration" doc:name="insert">
+                            <db:template-query-ref name="insertInfo"/>
+                        </db:insert>
+                        <set-payload value="success" doc:name="Set Payload"/>
+                    </otherwise>
+                </choice>
+            </when>
+            <otherwise>
+                <set-payload value="the Variable can not be empty" doc:name="Set Payload"/>
+            </otherwise>
+        </choice>
+    </flow>
+</mule>

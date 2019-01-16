@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:core="http://www.mulesoft.org/schema/mule/core" xmlns:mock="http://www.mulesoft.org/schema/mule/mock" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/mock http://www.mulesoft.org/schema/mule/mock/current/mule-mock.xsd">
+    <munit:config mock-connectors="false" mock-inbounds="false" name="munit" doc:name="MUnit configuration"/>
+    <spring:beans>
+        <spring:import resource="classpath:application.xml"/>
+    </spring:beans>
+    <munit:test name="new-test-suite-loginTest" description="Test">
+        <mock:when messageProcessor="set payload" doc:name="Mock">
+            <mock:then-return payload="#[payload]"/>
+        </mock:when>
+        <set-payload value="{&quot;username&quot;:&quot;admin&quot;,&quot;password&quot;:&quot;aa&quot;}" doc:name="Set Payload" encoding="UTF-8" mimeType="application/json"/>
+        <flow-ref name="login" doc:name="Flow-ref to login"/>
+        <munit:assert-payload-equals expectedValue="#[payload]" doc:name="Assert Payload"/>
+    </munit:test>
+    <munit:test name="new-test-suite-baseinfolistTest" description="Test">
+        <mock:when messageProcessor="set payload" doc:name="Mock">
+            <mock:then-return payload="#[payload]"/>
+        </mock:when>
+        <set-payload value="{&quot;username&quot;:&quot;admin&quot;}" doc:name="Set Payload"/>
+        <flow-ref name="baseinfolist" doc:name="Flow-ref to baseinfolist"/>
+        <munit:assert-payload-equals expectedValue="#[payload]" doc:name="Assert Payload"/>
+    </munit:test>
+    <munit:test name="new-test-suite-cosmuleFlowTest" description="Test">
+        <mock:when messageProcessor="set payload" doc:name="Mock">
+            <mock:then-return payload="#[payload]"/>
+        </mock:when>
+        <set-payload value="{&quot;application&quot;:1}" doc:name="Set Payload"/>
+        <flow-ref name="cosmuleFlow" doc:name="Flow-ref to cosmuleFlow"/>
+        <munit:assert-payload-equals expectedValue="#[payload]" doc:name="Assert Payload"/>
+    </munit:test>
+</mule>

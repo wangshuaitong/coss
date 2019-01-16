@@ -1,0 +1,69 @@
+#%RAML 1.0
+title: American Flights API
+version: 1.0
+#types:
+#  param:
+#    type: object
+#    properties:
+#      userId:
+#        required: true
+#        type: string
+#      baseInfo:
+#        required: true
+#        type: string
+
+/saveapplication:
+  post:
+    body:
+      application/json:     
+        example: |
+         {"username":"admin","password":"admin","baseInfo":"201901111548","application":"123456","company":"mule","status":"0","date":"2019-01-11"}
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {"message": "save successfully"}
+              
+/login:
+  post:
+    body:
+      application/json:     
+        example: |
+          {
+            "username":"Kobe",
+            "password":"123456"
+          }
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {"message": "login successfully"}
+
+/basicinfo:
+  post:
+    body:
+      application/json:
+        example: |
+          {
+            "application":1
+          }
+
+/delinfo:
+  post:
+    body:
+      appliaction/json:
+        example: |
+          {
+            "application":1
+          }
+
+/baseinfo:
+  post:
+    body:
+      application/json:
+        example: |
+          {
+            "name":"admin"
+          }
